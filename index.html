@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#040A0E">
+<title>GYMPAL</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root {
+  --bg: #060D12; --bg2: #0A1820; --bg3: #040A0E;
+  --border: #0D2430;
+  --teal: #00E5CC; --teal-dark: #041A18;
+  --purple: #7B4FD4; --purple-dark: #1A0F30; --purple-border: #3A2560; --purple-light: #C9AAFF;
+  --text: #fff; --muted: #1E4A44; --muted2: #A0BEB8;
+  --font: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); font-family: var(--font); color: var(--text); overflow: hidden; }
+
+#app { height: 100vh; display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; }
+.screen { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 80px; display: none; }
+.screen.active { display: block; }
+.screen::-webkit-scrollbar { display: none; }
+
+/* NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--bg3); border-top: 0.5px solid var(--border); padding: 10px 0 max(18px, env(safe-area-inset-bottom)); display: flex; justify-content: space-around; z-index: 100; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #1A3030; font-size: 22px; cursor: pointer; padding: 4px 16px; transition: color 0.2s; }
+.nav-item.active { color: var(--teal); }
+.nav-item span { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #1A3030; font-weight: 500; }
+.nav-item.active span { color: var(--teal); }
+
+/* TOPBAR */
+.topbar { background: var(--bg3); padding: 52px 20px 14px; display: flex; justify-content: space-between; align-items: center; }
+.topbar-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
+.topbar-back { width: 38px; height: 38px; border-radius: 11px; background: var(--bg2); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--teal); font-size: 20px; cursor: pointer; }
+.topbar-ghost { width: 38px; }
+
+/* CARDS */
+.card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 18px; padding: 18px; }
+.card.teal-outline { background: var(--teal-dark); border-color: var(--teal); }
+.card.purple-outline { background: var(--purple-dark); border-color: var(--purple-border); }
+
+/* TYPE */
+.label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.badge.teal { background: var(--teal-dark); border: 0.5px solid var(--teal); color: var(--teal); }
+.badge.purple { background: var(--purple-dark); border: 0.5px solid var(--purple-border); color: var(--purple-light); }
+.badge.muted { background: var(--bg2); border: 0.5px solid var(--border); color: var(--muted); }
+
+/* BUTTONS */
+.btn-primary { background: var(--teal); color: #001A18; font-weight: 700; font-size: 14px; text-align: center; padding: 16px; border-radius: 13px; letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer; border: none; width: 100%; transition: opacity 0.15s; font-family: var(--font); }
+.btn-primary:active { opacity: 0.85; }
+.btn-purple { background: var(--purple); color: #fff; font-size: 13px; font-weight: 500; text-align: center; padding: 13px; border-radius: 13px; cursor: pointer; border: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font); }
+.btn-ghost { background: transparent; border: 0.5px solid var(--border); color: var(--muted); font-size: 13px; font-weight: 500; text-align: center; padding: 13px; border-radius: 13px; cursor: pointer; width: 100%; font-family: var(--font); }
+
+/* DOTS */
+.series-dots { display: flex; gap: 6px; }
+.dot { height: 5px; border-radius: 3px; flex: 1; background: var(--border); transition: background 0.3s; }
+.dot.done { background: var(--teal); }
+
+/* WEEK STRIP */
+.week-strip { display: flex; gap: 6px; padding: 0 20px; }
+.day-pill { flex: 1; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 10px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s; }
+.day-pill.active { background: var(--teal); border-color: var(--teal); }
+.day-letter { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.day-pill.active .day-letter { color: #001A18; font-weight: 700; }
+
+/* EX ITEM */
+.ex-item { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s; }
+.ex-item:active { border-color: var(--teal); }
+.ex-num { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 20px; }
+.ex-info { flex: 1; }
+.ex-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.ex-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ex-sets { font-size: 14px; font-weight: 700; color: var(--teal); }
+
+/* STATS */
+.stats-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-mini { background: var(--bg); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.stat-big { font-size: 36px; font-weight: 700; color: var(--text); line-height: 1; }
+.stat-unit { font-size: 12px; color: var(--muted); }
+
+/* TIMER */
+.timer-block { background: var(--bg3); border: 0.5px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+.timer-val { font-size: 28px; font-weight: 700; color: var(--teal); line-height: 1; }
+.timer-btn { width: 46px; height: 46px; border-radius: 13px; background: var(--purple); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; cursor: pointer; border: none; }
+
+/* STEPS */
+.step-item { display: flex; gap: 10px; align-items: flex-start; }
+.step-num { width: 26px; height: 26px; border-radius: 7px; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; margin-top: 1px; }
+.step-text { font-size: 13px; color: var(--muted2); line-height: 1.55; flex: 1; }
+.step-text strong { color: var(--text); font-weight: 500; }
+
+/* MENU */
+.menu-item { background: var(--bg2); border: 0.5px solid var(--border); border-radius: 16px; padding: 17px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.menu-left { display: flex; align-items: center; gap: 13px; }
+.menu-icon { font-size: 20px; color: var(--muted); }
+.menu-text { font-size: 14px; font-weight: 500; color: var(--text); }
+.menu-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* GIF */
+.ex-gif { width: 100%; border-radius: 14px; overflow: hidden; background: var(--bg2); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; min-height: 190px; }
+.ex-gif img { width: 100%; height: auto; display: block; }
+.loading-state { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px; color: var(--muted); font-size: 13px; }
+
+/* SPINNER */
+.spinner { width: 26px; height: 26px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ANIMATIONS */
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation: fadeUp 0.28s ease forwards; }
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+
+/* WEIGHT MODAL */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--bg2); border-radius: 24px 24px 0 0; border-top: 0.5px solid var(--border); padding: 20px 22px max(32px, env(safe-area-inset-bottom)); width: 100%; max-width: 430px; animation: slideUp 0.3s ease; }
+.sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
+.weight-input { background: var(--bg); border: 0.5px solid var(--teal); border-radius: 13px; font-size: 38px; font-weight: 700; color: var(--text); text-align: center; padding: 14px; width: 100%; outline: none; margin-bottom: 12px; font-family: var(--font); }
+.weight-chips { display: flex; gap: 7px; margin-bottom: 13px; }
+.wchip { flex: 1; background: var(--bg); border: 0.5px solid var(--border); border-radius: 10px; padding: 11px; text-align: center; font-size: 13px; font-weight: 700; color: var(--teal); cursor: pointer; font-family: var(--font); }
+.wchip:active { background: var(--teal-dark); }
+
+/* UPDATE MODAL */
+.check-item { background: var(--bg); border: 0.5px solid var(--border); border-radius: 13px; padding: 13px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px; }
+.check-item.auto-item { border-color: var(--teal); background: var(--teal-dark); cursor: default; }
+.check-item.is-checked { border-color: var(--teal); background: var(--teal-dark); }
+.check-box { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--muted); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.2s; }
+.check-item.auto-item .check-box,
+.check-item.is-checked .check-box { background: var(--teal); border-color: var(--teal); color: #001A18; }
+.check-content { flex: 1; }
+.check-title { font-size: 13px; font-weight: 500; color: var(--text); }
+.check-desc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.check-item.auto-item .check-desc { color: var(--teal); }
+.check-item.is-checked .check-desc { color: var(--teal); }
+.auto-pill { font-size: 9px; color: var(--teal); background: rgba(0,229,204,0.1); border: 0.5px solid var(--teal); border-radius: 20px; padding: 2px 8px; flex-shrink: 0; font-weight: 500; }
+
+.score-track { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.score-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 2px; background: var(--teal); transition: width 0.4s ease; }
+.score-lbl { font-size: 11px; color: var(--muted); white-space: nowrap; font-weight: 500; }
+
+.result-card { border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 14px; transition: all 0.3s; }
+.result-card.not-yet { background: var(--bg); border: 0.5px solid var(--border); }
+.result-card.ready { background: var(--purple-dark); border: 1px solid var(--purple-border); }
+.result-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.result-sub { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.result-card.ready .result-sub { color: var(--purple-light); }
+
+/* TOAST */
+.toast { position: fixed; top: 56px; left: 50%; transform: translateX(-50%); padding: 12px 22px; border-radius: 30px; font-size: 13px; font-weight: 700; z-index: 400; animation: fadeUp 0.3s ease forwards; display: flex; align-items: center; gap: 8px; white-space: nowrap; pointer-events: none; }
+
+/* INFO CARD */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.info-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: 12px; padding: 12px; }
+.info-val { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1; }
+.info-unit { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.day-chips { display: flex; gap: 5px; }
+.day-chip { flex: 1; background: var(--teal-dark); border: 0.5px solid var(--teal); border-radius: 8px; padding: 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.day-chip-name { font-size: 9px; color: var(--teal); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+.day-chip-focus { font-size: 8px; color: var(--teal); text-align: center; line-height: 1.3; opacity: 0.8; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== ROUTINE ===== -->
+  <div id="screen-rutina" class="screen active">
+    <div style="padding:52px 20px 0;">
+      <div style="font-size:28px; font-weight:700; line-height:1.05;">Hey, <span style="color:var(--teal);">Vicky</span></div>
+    </div>
+    <div style="padding:16px 0 0;"><div class="week-strip" id="weekStrip"></div></div>
+    <div style="padding:16px 20px 0; display:flex; flex-direction:column; gap:13px;">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:11px;">
+          <span class="label" id="todayDayLabel">Today · Day 1</span>
+          <span class="badge teal" id="todayFocus">Shoulders</span>
+        </div>
+        <div style="font-size:22px; font-weight:700; line-height:1.1; margin-bottom:4px;" id="todayTitle">Shoulders, chest & triceps</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:14px;" id="todayMeta">6 exercises · ~45 min</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-bottom:14px;">
+          <div class="stat-mini"><div style="font-size:19px; font-weight:700;" id="todaySeries">18</div><div class="label">Sets</div></div>
+          <div class="stat-mini"><div style="font-size:19px; font-weight:700;">45</div><div class="label">Min</div></div>
+          <div class="stat-mini"><div style="font-size:19px; font-weight:700;" id="todayExCount">6</div><div class="label">Exercises</div></div>
+        </div>
+        <button class="btn-primary" onclick="startWorkout()">Start workout →</button>
+      </div>
+      <div class="label" style="padding:0 2px;">Today's exercises</div>
+      <div id="todayExList" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== ACTIVE EXERCISE ===== -->
+  <div id="screen-ejercicio" class="screen">
+    <div class="topbar">
+      <div class="topbar-back" onclick="goBack()"><i class="ti ti-arrow-left"></i></div>
+      <span class="topbar-title" id="activeWorkoutLabel">Day 1 · Shoulders</span>
+      <div class="topbar-ghost"></div>
+    </div>
+    <div style="padding:0 20px; display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div style="flex:1;">
+          <div style="font-size:30px; font-weight:700; line-height:1.05;" id="activeExName">Shoulder <span style="color:var(--teal);">Press</span></div>
+          <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;" id="activeExTags"></div>
+        </div>
+        <div style="width:110px; height:110px; background:var(--bg2); border:0.5px solid var(--border); border-radius:14px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center;" id="activeExThumb">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:11px;">
+          <span class="label">Sets</span>
+          <span style="font-size:13px; font-weight:700; color:var(--teal);" id="seriesCounter">1 of 3</span>
+        </div>
+        <div class="series-dots" id="seriesDots"></div>
+        <div class="stats-2col" style="margin-top:11px;">
+          <div class="stat-mini" onclick="openModal('weight')" style="cursor:pointer;">
+            <div class="label">Weight</div>
+            <div class="stat-big" id="currentWeight">—</div>
+            <div class="stat-unit">kg</div>
+            <div style="font-size:10px; color:var(--muted); margin-top:2px;" id="prevWeightLabel"></div>
+          </div>
+          <div class="stat-mini" onclick="openModal('reps')" style="cursor:pointer;">
+            <div class="label">Reps</div>
+            <div class="stat-big" id="currentReps">10</div>
+            <div id="prBadge"></div>
+          </div>
+        </div>
+      </div>
+      <div class="timer-block">
+        <div><div class="label">Rest</div><div class="timer-val" id="timerDisplay">1:30</div></div>
+        <button class="timer-btn" onclick="toggleTimer()"><i class="ti ti-player-play" id="timerIcon"></i></button>
+      </div>
+      <button class="btn-primary" onclick="completeSerie()">Set done →</button>
+      <button class="btn-purple" onclick="showMachineGuide()"><i class="ti ti-device-tv"></i> How to use this machine</button>
+    </div>
+  </div>
+
+  <!-- ===== MACHINE GUIDE ===== -->
+  <div id="screen-maquinas" class="screen">
+    <div class="topbar">
+      <div class="topbar-back" onclick="closeMachineGuide()"><i class="ti ti-arrow-left"></i></div>
+      <span class="topbar-title">Machine guide</span>
+      <div class="topbar-ghost"></div>
+    </div>
+    <div style="padding:0 20px; display:flex; flex-direction:column; gap:13px;">
+      <div class="ex-gif" id="guideGif"><div class="loading-state"><div class="spinner"></div><span>Loading exercise...</span></div></div>
+      <div style="font-size:26px; font-weight:700; line-height:1.05;" id="guideExName"></div>
+      <div>
+        <div class="label" style="margin-bottom:8px;">Target muscles</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;" id="guideMuscles"></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:10px;">How to do it</div>
+        <div style="display:flex; flex-direction:column; gap:8px;" id="guideSteps"></div>
+      </div>
+      <div class="card purple-outline" style="display:flex; gap:10px; align-items:flex-start;">
+        <i class="ti ti-alert-triangle" style="color:var(--purple-light); font-size:17px; flex-shrink:0; margin-top:1px;"></i>
+        <div style="font-size:12px; color:var(--purple-light); line-height:1.5;" id="guideTip"></div>
+      </div>
+      <div style="padding-bottom:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== PROFILE ===== -->
+  <div id="screen-perfil" class="screen">
+    <div style="padding:52px 20px 0; display:flex; flex-direction:column; gap:13px;">
+
+      <div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding-bottom:8px;">
+        <div style="width:80px; height:80px; border-radius:22px; background:var(--purple); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700;">VU</div>
+        <div style="font-size:24px; font-weight:700;">Vicky Ugel</div>
+      </div>
+
+      <!-- Personal info card -->
+      <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="label">Age</div>
+            <div class="info-val">31</div>
+            <div class="info-unit">years</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Weight</div>
+            <div class="info-val">62</div>
+            <div class="info-unit">kg</div>
+          </div>
+          <div class="info-box">
+            <div class="label">Goal</div>
+            <div style="font-size:12px; font-weight:700; color:var(--text); line-height:1.3; margin-top:4px;">Muscle<br>gain</div>
+          </div>
+        </div>
+        <div style="height:0.5px; background:var(--border);"></div>
+        <div>
+          <div class="label" style="margin-bottom:8px;">Current routine · 4 days</div>
+          <div class="day-chips">
+            <div class="day-chip"><div class="day-chip-name">Day 1</div><div class="day-chip-focus">Shoulders & chest</div></div>
+            <div class="day-chip"><div class="day-chip-name">Day 2</div><div class="day-chip-focus">Glutes & legs</div></div>
+            <div class="day-chip"><div class="day-chip-name">Day 3</div><div class="day-chip-focus">Back & biceps</div></div>
+            <div class="day-chip"><div class="day-chip-name">Day 4</div><div class="day-chip-focus">Full body</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Update routine -->
+      <div class="menu-item" style="background:var(--teal-dark); border:1px solid var(--teal);" onclick="openUpdateModal()">
+        <div class="menu-left">
+          <i class="ti ti-refresh" style="font-size:20px; color:var(--teal);"></i>
+          <div>
+            <div class="menu-text">Update routine</div>
+            <div class="menu-sub" style="color:var(--teal);">Check if it's time to level up</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:7px; height:7px; border-radius:50%; background:var(--teal);"></div>
+          <i class="ti ti-chevron-right" style="color:var(--teal); font-size:16px;"></i>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="menu-item">
+        <div class="menu-left">
+          <i class="ti ti-settings menu-icon"></i>
+          <div class="menu-text">Settings</div>
+        </div>
+        <i class="ti ti-chevron-right" style="color:var(--muted); font-size:16px;"></i>
+      </div>
+
+      <div style="padding-bottom:20px;"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" id="nav-rutina" onclick="showScreen('rutina')"><i class="ti ti-calendar"></i><span>Routine</span></div>
+    <div class="nav-item" id="nav-ejercicio" onclick="showScreen('ejercicio')"><i class="ti ti-barbell"></i><span>Exercises</span></div>
+    <div class="nav-item" id="nav-maquinas" onclick="showScreen('maquinas')"><i class="ti ti-devices"></i><span>Machines</span></div>
+    <div class="nav-item" id="nav-perfil" onclick="showScreen('perfil')"><i class="ti ti-user"></i><span>Profile</span></div>
+  </nav>
+
+  <!-- WEIGHT/REPS MODAL -->
+  <div class="overlay" id="inputModal" style="display:none;" onclick="closeInputModal(event)">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="label" style="margin-bottom:11px;" id="modalLabel">Weight (kg)</div>
+      <input class="weight-input" type="number" id="modalInput" placeholder="0" inputmode="decimal">
+      <div class="weight-chips">
+        <div class="wchip" onclick="nudge(-2.5)">−2.5</div>
+        <div class="wchip" onclick="nudge(-1.25)">−1.25</div>
+        <div class="wchip" onclick="nudge(1.25)">+1.25</div>
+        <div class="wchip" onclick="nudge(2.5)">+2.5</div>
+      </div>
+      <button class="btn-primary" onclick="saveInput()">Save</button>
+    </div>
+  </div>
+
+  <!-- UPDATE ROUTINE MODAL -->
+  <div class="overlay" id="updateModal" style="display:none;" onclick="closeUpdateModal(event)">
+    <div class="sheet" style="max-height:90vh; overflow-y:auto;">
+      <div class="sheet-handle"></div>
+      <div style="font-size:22px; font-weight:700; margin-bottom:4px;">Ready for a change?</div>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.5;">Check the signals below to find out if it's time to update your routine.</div>
+
+      <div class="score-track">
+        <div class="score-bar"><div class="score-fill" id="scoreFill" style="width:0%;"></div></div>
+        <div class="score-lbl" id="scoreLabel">0 of 4</div>
+      </div>
+
+      <!-- AUTO -->
+      <div class="check-item auto-item" id="check-auto">
+        <div class="check-box"><i class="ti ti-check"></i></div>
+        <div class="check-content">
+          <div class="check-title">All exercises have a weight logged</div>
+          <div class="check-desc" id="autoCheckDesc">Detected automatically</div>
+        </div>
+        <div class="auto-pill">auto</div>
+      </div>
+
+      <!-- MANUAL -->
+      <div class="check-item" id="check-1" onclick="toggleCheck('check-1')">
+        <div class="check-box" id="box-1"></div>
+        <div class="check-content">
+          <div class="check-title">Weights feel too easy</div>
+          <div class="check-desc">You finish every set without real effort</div>
+        </div>
+      </div>
+      <div class="check-item" id="check-2" onclick="toggleCheck('check-2')">
+        <div class="check-box" id="box-2"></div>
+        <div class="check-content">
+          <div class="check-title">You've been on this routine 8+ weeks</div>
+          <div class="check-desc">Your body has adapted to the stimulus</div>
+        </div>
+      </div>
+      <div class="check-item" id="check-3" onclick="toggleCheck('check-3')">
+        <div class="check-box" id="box-3"></div>
+        <div class="check-content">
+          <div class="check-title">You feel bored or unmotivated</div>
+          <div class="check-desc">Lack of challenge affects consistency</div>
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div class="result-card not-yet" id="resultCard" style="margin-top:16px;">
+        <div style="font-size:24px; flex-shrink:0;" id="resultEmoji">💪</div>
+        <div>
+          <div class="result-title" id="resultTitle">Keep going</div>
+          <div class="result-sub" id="resultSub">Mark the signals that apply to evaluate.</div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="claudeBtn" style="display:none;" onclick="openClaude()">Ask Claude for a new routine →</button>
+      <button class="btn-ghost" style="margin-top:8px;" onclick="document.getElementById('updateModal').style.display='none'">Close</button>
+      <div style="padding-bottom:8px;"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+
+// Static exercise data — gifs from ExerciseDB public dataset, no API/CORS needed
+const GIF_MAP = {
+  "shoulder press machine":             { gifUrl: "https://static.exercisedb.dev/media/0055.gif",  muscles: ["shoulders","triceps"],        instructions: ["Adjust the seat so the handles are at shoulder height.","Grip the handles and push upward until arms are extended.","Lower back slowly to starting position.","Keep your back flat against the pad throughout."] },
+  "upright row barbell":                { gifUrl: "https://static.exercisedb.dev/media/0059.gif",  muscles: ["traps","shoulders"],          instructions: ["Stand holding barbell with overhand grip, hands shoulder-width apart.","Pull bar up along your body toward your chin, leading with elbows.","Pause at the top when bar reaches collarbone level.","Lower the bar slowly back to starting position."] },
+  "lateral raise dumbbell":             { gifUrl: "https://static.exercisedb.dev/media/0042.gif",  muscles: ["shoulders"],                  instructions: ["Stand with dumbbells at your sides, slight bend in elbows.","Raise arms out to the sides until parallel to the floor.","Hold briefly at the top.","Lower slowly back to starting position."] },
+  "dumbbell bench press":               { gifUrl: "https://static.exercisedb.dev/media/0028.gif",  muscles: ["chest","shoulders","triceps"], instructions: ["Lie on a bench holding dumbbells at chest level.","Press the dumbbells up until arms are fully extended.","Lower slowly back to chest level.","Keep feet flat on the floor throughout."] },
+  "overhead triceps extension dumbbell":{ gifUrl: "https://static.exercisedb.dev/media/0086.gif",  muscles: ["triceps"],                    instructions: ["Hold one dumbbell with both hands above your head.","Lower the weight behind your head by bending your elbows.","Keep upper arms stationary and pointing up.","Extend arms back to starting position."] },
+  "triceps dip":                        { gifUrl: "https://static.exercisedb.dev/media/0082.gif",  muscles: ["triceps","chest"],            instructions: ["Sit on the dip machine and grip the handles.","Lower yourself by bending elbows to 90 degrees.","Push back up to starting position.","Keep your back straight throughout."] },
+  "barbell romanian deadlift":          { gifUrl: "https://static.exercisedb.dev/media/0038.gif",  muscles: ["hamstrings","glutes"],        instructions: ["Stand with bar at hip level, overhand grip.","Push hips back and lower bar along your legs.","Keep back flat and bar close to your body.","Drive hips forward to return to standing."] },
+  "dumbbell deadlift":                  { gifUrl: "https://static.exercisedb.dev/media/0032.gif",  muscles: ["glutes","hamstrings"],        instructions: ["Stand with dumbbells in front, one foot slightly back.","Hinge at the hips and lower weights along legs.","Keep back flat and chest up.","Drive through the front heel to return to start."] },
+  "barbell hip thrust":                 { gifUrl: "https://static.exercisedb.dev/media/0026.gif",  muscles: ["glutes","hamstrings"],        instructions: ["Rest upper back on bench, bar over hips.","Drive through heels and thrust hips up.","Squeeze glutes at the top for 1 second.","Lower hips back toward the floor with control."] },
+  "sumo squat":                         { gifUrl: "https://static.exercisedb.dev/media/0078.gif",  muscles: ["glutes","quads","adductors"], instructions: ["Stand with feet wider than shoulder-width, toes out.","Lower into a squat keeping chest up.","Push knees out in line with toes.","Drive through heels to return to standing."] },
+  "lying leg curl":                     { gifUrl: "https://static.exercisedb.dev/media/0045.gif",  muscles: ["hamstrings"],                 instructions: ["Lie face down on the machine with ankles under the pad.","Curl legs upward toward your glutes.","Hold briefly at the top.","Lower slowly back to starting position."] },
+  "hip abduction":                      { gifUrl: "https://static.exercisedb.dev/media/0041.gif",  muscles: ["glutes","abductors"],         instructions: ["Sit on the machine with pads on outer thighs.","Push legs outward against resistance.","Hold briefly at the widest point.","Return slowly to starting position."] },
+  "lat pulldown":                       { gifUrl: "https://static.exercisedb.dev/media/0043.gif",  muscles: ["lats","biceps"],              instructions: ["Sit with thighs under pads, grip bar wider than shoulders.","Pull bar down to upper chest, leading with elbows.","Squeeze lats at the bottom.","Let bar rise slowly back to start."] },
+  "underhand cable pulldown":           { gifUrl: "https://static.exercisedb.dev/media/0015.gif",  muscles: ["lats","biceps"],              instructions: ["Grip bar underhand, shoulder-width apart.","Lean forward 45 degrees from hips.","Pull bar toward your lower abdomen.","Return with control, feeling the stretch."] },
+  "seated row":                         { gifUrl: "https://static.exercisedb.dev/media/0070.gif",  muscles: ["lats","rhomboids","traps"],   instructions: ["Sit with feet on platform, grip the handle.","Pull handle toward your abdomen, squeezing shoulder blades.","Hold briefly at full contraction.","Extend arms slowly back to start."] },
+  "cable curl":                         { gifUrl: "https://static.exercisedb.dev/media/0021.gif",  muscles: ["biceps"],                     instructions: ["Stand facing cable machine, grip rope attachment.","Curl upward keeping elbows at your sides.","Rotate wrists outward at the top.","Lower slowly back to starting position."] },
+  "incline dumbbell curl":              { gifUrl: "https://static.exercisedb.dev/media/0040.gif",  muscles: ["biceps"],                     instructions: ["Sit on incline bench with dumbbells hanging at sides.","Curl both dumbbells up toward shoulders.","Keep upper arms stationary.","Lower slowly to full extension."] },
+  "straight arm pulldown":              { gifUrl: "https://static.exercisedb.dev/media/0077.gif",  muscles: ["lats","core"],                instructions: ["Stand facing cable, grip bar with arms extended.","Pull bar down keeping arms nearly straight.","Focus on squeezing your lats.","Return bar upward with control."] },
+  "cable lateral raise":                { gifUrl: "https://static.exercisedb.dev/media/0020.gif",  muscles: ["shoulders"],                  instructions: ["Stand beside cable machine, grip handle with far hand.","Raise arm out to the side until parallel to floor.","Hold briefly at the top.","Lower slowly back to starting position."] },
+  "dumbbell goblet squat":              { gifUrl: "https://static.exercisedb.dev/media/0031.gif",  muscles: ["quads","glutes","core"],      instructions: ["Hold dumbbell vertically at chest height.","Feet shoulder-width apart, toes slightly out.","Lower into a squat keeping chest up.","Drive through heels to return to standing."] },
+  "push up":                            { gifUrl: "https://static.exercisedb.dev/media/0064.gif",  muscles: ["chest","triceps","core"],     instructions: ["Start in plank position, hands slightly wider than shoulders.","Lower chest toward the floor by bending elbows.","Keep your body in a straight line.","Push back up to starting position."] },
+  "dumbbell bent over row":             { gifUrl: "https://static.exercisedb.dev/media/0029.gif",  muscles: ["lats","biceps"],              instructions: ["Place one knee and hand on bench for support.","Hold dumbbell in other hand, arm extended.","Pull dumbbell toward your hip, elbow close to body.","Lower slowly back to starting position."] },
+  "dumbbell step up":                   { gifUrl: "https://static.exercisedb.dev/media/0036.gif",  muscles: ["glutes","quads"],             instructions: ["Hold dumbbells at sides, stand in front of a box.","Step up with one foot, pressing through the heel.","Bring other foot up to the box.","Step back down and repeat."] },
+  "plank":                              { gifUrl: "https://static.exercisedb.dev/media/0062.gif",  muscles: ["core","shoulders"],           instructions: ["Start in push-up position on your hands.","Keep body in straight line from head to heels.","Tap opposite shoulder with each hand alternately.","Keep hips as still as possible."] },
+  "glute bridge":                       { gifUrl: "https://static.exercisedb.dev/media/0039.gif",  muscles: ["glutes","core","hamstrings"], instructions: ["Lie on back with knees bent, feet flat.","Drive hips up by squeezing glutes.","March one leg up at a time keeping hips level.","Lower hips back to floor with control."] }
+};
+
+async function fetchEx(searchId) {
+  return GIF_MAP[searchId] || null;
+}
+
+// ============================================================
+// ROUTINE DATA
+// ============================================================
+const ROUTINE = { days: [
+  { id:1, name:"Shoulders, chest & triceps", focus:"Shoulders", exercises:[
+    { id:"shoulder press machine",   name:"Shoulder Press",            equip:"Machine",    sets:3, reps:"10-12", tip:"Keep your back flat against the pad. Don't lock your elbows at the top." },
+    { id:"upright row barbell",      name:"Upright Row",               equip:"Barbell",    sets:3, reps:"10-12", tip:"Don't raise elbows above shoulder height. Avoid using momentum." },
+    { id:"lateral raise dumbbell",   name:"Lateral Raise",             equip:"Dumbbells",  sets:3, reps:"10-12", tip:"Lift with control. Slight bend in elbows throughout the movement." },
+    { id:"dumbbell bench press",     name:"Dumbbell Bench Press",      equip:"Dumbbells",  sets:3, reps:"10-12", tip:"Lower dumbbells to chest level. No bouncing off the chest." },
+    { id:"overhead triceps extension dumbbell", name:"Overhead Triceps Extension", equip:"Dumbbells", sets:3, reps:"10-12", tip:"Keep elbows pointing up toward the ceiling. Only move forearms." },
+    { id:"triceps dip",              name:"Triceps Dips",              equip:"Machine",    sets:3, reps:"10-12", tip:"Lower with control to 90°. Don't use hip momentum." }
+  ]},
+  { id:2, name:"Glutes & legs", focus:"Legs", exercises:[
+    { id:"barbell romanian deadlift", name:"Romanian Deadlift",        equip:"Barbell",    sets:3, reps:"10-12", tip:"Keep the bar close to your body. Hinge from hips, don't squat." },
+    { id:"dumbbell deadlift",        name:"B-Stance Deadlift",         equip:"Dumbbells",  sets:3, reps:"10-12", tip:"Back foot is just for balance. Drive through the front leg." },
+    { id:"barbell hip thrust",       name:"Hip Thrust",                equip:"Machine",    sets:3, reps:"10-12", tip:"Squeeze glutes at the top. Keep chin tucked, don't look at the ceiling." },
+    { id:"sumo squat",               name:"Sumo Squat",                equip:"Machine",    sets:3, reps:"10-12", tip:"Align knees with toes. Lower until thighs are parallel to the floor." },
+    { id:"lying leg curl",           name:"Lying Leg Curl",            equip:"Machine",    sets:3, reps:"10-12", tip:"Don't raise hips when curling. Lower slowly, control the weight." },
+    { id:"hip abduction",            name:"Hip Abduction",             equip:"Machine",    sets:3, reps:"10-12", tip:"Keep spine straight. Movement comes from the hip, not the waist." }
+  ]},
+  { id:3, name:"Back & biceps", focus:"Back", exercises:[
+    { id:"lat pulldown",             name:"Lat Pulldown",              equip:"Machine",    sets:3, reps:"10-12", tip:"Pull to chest, not behind neck. Elbows down and back on every rep." },
+    { id:"underhand cable pulldown", name:"Underhand Row",             equip:"Barbell",    sets:3, reps:"10-12", tip:"Lean 45° forward. Pull toward the abdomen, not the chest." },
+    { id:"seated row",               name:"Seated Row",                equip:"Machine",    sets:3, reps:"10-12", tip:"Squeeze shoulder blades at the end. Keep chest up throughout." },
+    { id:"cable curl",               name:"Cable Rope Curl",           equip:"Machine",    sets:3, reps:"10-12", tip:"Elbows fixed at your sides. Rotate wrists outward at the top." },
+    { id:"incline dumbbell curl",    name:"Incline Dumbbell Curl",     equip:"Dumbbells",  sets:3, reps:"10-12", tip:"Incline bench stretches the bicep more. Don't swing your torso." },
+    { id:"straight arm pulldown",    name:"Straight Arm Pulldown",     equip:"Machine",    sets:3, reps:"10-12", tip:"Arms nearly straight throughout. Feel the contraction in your lats." },
+    { id:"cable lateral raise",      name:"Lateral Raise",             equip:"Machine",    sets:3, reps:"10-12", tip:"Don't shrug your shoulders when lifting." }
+  ]},
+  { id:4, name:"Full body functional", focus:"Full Body", exercises:[
+    { id:"dumbbell goblet squat",    name:"Goblet Squat",              equip:"Dumbbell",   sets:3, reps:"10-12", tip:"Hold dumbbell close to chest. Knees out, chest up." },
+    { id:"push up",                  name:"Push Up",                   equip:"Bodyweight", sets:3, reps:"10-12", tip:"Body in a straight line head to heels. Don't let hips sag." },
+    { id:"dumbbell bent over row",   name:"Dumbbell Row",              equip:"Dumbbells",  sets:3, reps:"10-12", tip:"Pull toward the hip, not the shoulder." },
+    { id:"dumbbell step up",         name:"Step Up",                   equip:"Dumbbells",  sets:3, reps:"10-12", tip:"Place full foot on the box. Drive through the heel." },
+    { id:"plank",                    name:"Plank Shoulder Taps",       equip:"Bodyweight", sets:3, reps:"20 taps", tip:"Hips stable, no rotation. Square your hips on each tap." },
+    { id:"glute bridge",             name:"Hip Bridge March",          equip:"Bodyweight", sets:3, reps:"12 per side", tip:"Keep hips elevated the whole time. Slow and controlled." }
+  ]}
+]};
+
+// ============================================================
+// STATE
+// ============================================================
+let S = {
+  screen: 'rutina', dayIdx: getDayIdx(),
+  workout: null, exIdx: 0, serie: 1,
+  timerInt: null, timerSec: 90, timerOn: false,
+  modalType: null,
+  weights: JSON.parse(localStorage.getItem('gympal_w') || '{}'),
+};
+
+function getDayIdx() { return ({1:0,2:1,3:2,4:3,5:0,6:1,0:2})[new Date().getDay()] ?? 0; }
+function saveW() { localStorage.setItem('gympal_w', JSON.stringify(S.weights)); }
+function wKey(dayId, exId) { return `${dayId}_${exId}`; }
+function prevW(dayId, exId) { return S.weights[wKey(dayId, exId)] || null; }
+
+// ============================================================
+// SCREENS
+// ============================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  const nav = document.getElementById('nav-' + name);
+  if (nav) nav.classList.add('active');
+  S.screen = name;
+  if (name === 'rutina') renderRutina();
+}
+
+function goBack() {
+  showScreen('ejercicio');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-ejercicio').classList.add('active');
+}
+
+// ============================================================
+// ROUTINE SCREEN
+// ============================================================
+function renderRutina() { renderStrip(); renderCard(); renderList(); }
+
+function renderStrip() {
+  const days = ['M','T','W','T','F','S','S'];
+  const today = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+  document.getElementById('weekStrip').innerHTML = days.map((d,i) =>
+    `<div class="day-pill ${i===today?'active':''}" onclick="selectDay(${i%4})">
+      <div class="day-letter">${d}</div>
+    </div>`
+  ).join('');
+}
+
+function selectDay(idx) { S.dayIdx = idx; renderCard(); renderList(); }
+
+function renderCard() {
+  const day = ROUTINE.days[S.dayIdx];
+  document.getElementById('todayDayLabel').textContent = `Today · Day ${day.id}`;
+  document.getElementById('todayFocus').textContent = day.focus;
+  document.getElementById('todayTitle').textContent = day.name;
+  document.getElementById('todayExCount').textContent = day.exercises.length;
+  document.getElementById('todaySeries').textContent = day.exercises.reduce((a,e)=>a+e.sets,0);
+}
+
+function renderList() {
+  const day = ROUTINE.days[S.dayIdx];
+  document.getElementById('todayExList').innerHTML = day.exercises.map((ex,i) => {
+    const prev = prevW(day.id, ex.id);
+    return `<div class="ex-item fade-up" style="animation-delay:${i*0.04}s" onclick="openExercise(${i})">
+      <div class="ex-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="ex-info">
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-detail">${prev ? `Last: ${prev} kg` : 'No data yet'} · ${ex.equip}</div>
+      </div>
+      <div class="ex-sets">${ex.sets}×${ex.reps}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// WORKOUT
+// ============================================================
+function startWorkout() { S.workout = S.dayIdx; openExercise(0); }
+
+function openExercise(idx) {
+  S.exIdx = idx; S.serie = 1;
+  S.workout = S.workout ?? S.dayIdx;
+  resetTimer(); renderActiveEx(); loadThumb();
+  showScreen('ejercicio');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-ejercicio').classList.add('active');
+}
+
+function renderActiveEx() {
+  const day = ROUTINE.days[S.workout];
+  const ex = day.exercises[S.exIdx];
+  const prev = prevW(day.id, ex.id);
+
+  document.getElementById('activeWorkoutLabel').textContent = `Day ${day.id} · ${day.focus}`;
+
+  const words = ex.name.split(' ');
+  const last = words.pop();
+  document.getElementById('activeExName').innerHTML =
+    (words.length ? words.join(' ')+'<br>' : '') + `<span style="color:var(--teal);">${last}</span>`;
+
+  document.getElementById('activeExTags').innerHTML =
+    `<span class="badge teal">${ex.equip}</span>` +
+    `<span class="badge muted">${ex.sets} sets · ${ex.reps} reps</span>`;
+
+  document.getElementById('currentWeight').textContent = prev || '—';
+  document.getElementById('prevWeightLabel').textContent = prev ? `Previous: ${prev} kg` : 'First entry';
+  document.getElementById('currentReps').textContent = ex.reps.split('-')[0];
+  document.getElementById('prBadge').innerHTML = '';
+
+  document.getElementById('seriesDots').innerHTML = Array.from({length:ex.sets},(_,i)=>
+    `<div class="dot ${i<S.serie-1?'done':''}"></div>`
+  ).join('');
+  document.getElementById('seriesCounter').textContent = `${S.serie} of ${ex.sets}`;
+}
+
+async function loadThumb() {
+  const ex = ROUTINE.days[S.workout].exercises[S.exIdx];
+  const thumb = document.getElementById('activeExThumb');
+  thumb.innerHTML = '<div class="spinner"></div>';
+  const data = await fetchEx(ex.id);
+  thumb.innerHTML = data?.gifUrl
+    ? `<img src="${data.gifUrl}" alt="${ex.name}" style="width:110px;height:110px;object-fit:cover;border-radius:14px;">`
+    : `<svg width="110" height="110" viewBox="0 0 110 110"><rect width="110" height="110" fill="#0A1820"/><line x1="8" y1="8" x2="102" y2="102" stroke="#0D2430" stroke-width="1.5"/><line x1="102" y1="8" x2="8" y2="102" stroke="#0D2430" stroke-width="1.5"/></svg>`;
+}
+
+function completeSerie() {
+  const day = ROUTINE.days[S.workout];
+  const ex = day.exercises[S.exIdx];
+  const w = parseFloat(document.getElementById('currentWeight').textContent);
+
+  if (!isNaN(w) && w > 0) {
+    const key = wKey(day.id, ex.id);
+    const prev = S.weights[key];
+    if (!prev || w > prev) {
+      if (prev && w > prev) {
+        toast(`New PR on ${ex.name}! 🏆`, 'var(--purple)', '#fff');
+        document.getElementById('prBadge').innerHTML = '<div class="badge purple" style="margin-top:4px;"><i class="ti ti-trophy" style="font-size:10px;"></i> Personal record</div>';
+      }
+      S.weights[key] = w;
+      saveW();
+    }
+  }
+
+  if (S.serie < ex.sets) {
+    S.serie++;
+    document.getElementById('seriesDots').innerHTML = Array.from({length:ex.sets},(_,i)=>
+      `<div class="dot ${i<S.serie-1?'done':''}"></div>`
+    ).join('');
+    document.getElementById('seriesCounter').textContent = `${S.serie} of ${ex.sets}`;
+    startTimer();
+  } else if (S.exIdx < day.exercises.length - 1) {
+    S.exIdx++; S.serie = 1;
+    resetTimer(); renderActiveEx(); loadThumb();
+    toast(`Next: ${day.exercises[S.exIdx].name}`, 'var(--teal)', '#001A18');
+  } else {
+    showScreen('rutina');
+    setTimeout(() => toast('Workout complete! 🎉', 'var(--teal)', '#001A18'), 300);
+  }
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+function resetTimer() {
+  clearInterval(S.timerInt); S.timerOn = false; S.timerSec = 90;
+  const d = document.getElementById('timerDisplay');
+  if (d) { d.textContent = '1:30'; d.style.color = 'var(--teal)'; }
+  const i = document.getElementById('timerIcon');
+  if (i) i.className = 'ti ti-player-play';
+}
+
+function toggleTimer() {
+  S.timerOn ? (clearInterval(S.timerInt), S.timerOn=false, document.getElementById('timerIcon').className='ti ti-player-play') : startTimer();
+}
+
+function startTimer() {
+  S.timerSec = 90; clearInterval(S.timerInt);
+  S.timerOn = true;
+  document.getElementById('timerIcon').className = 'ti ti-player-pause';
+  S.timerInt = setInterval(() => {
+    S.timerSec--;
+    const m = Math.floor(S.timerSec/60), s = S.timerSec%60;
+    const el = document.getElementById('timerDisplay');
+    if (el) { el.textContent = `${m}:${String(s).padStart(2,'0')}`; el.style.color = S.timerSec <= 10 ? '#FF6B6B' : 'var(--teal)'; }
+    if (S.timerSec <= 0) {
+      clearInterval(S.timerInt); S.timerOn = false;
+      if (el) el.textContent = 'Go!';
+      document.getElementById('timerIcon').className = 'ti ti-player-play';
+    }
+  }, 1000);
+}
+
+// ============================================================
+// INPUT MODAL
+// ============================================================
+function openModal(type) {
+  S.modalType = type;
+  document.getElementById('modalLabel').textContent = type === 'weight' ? 'Weight (kg)' : 'Reps';
+  const input = document.getElementById('modalInput');
+  input.value = type === 'weight'
+    ? (document.getElementById('currentWeight').textContent !== '—' ? document.getElementById('currentWeight').textContent : '')
+    : document.getElementById('currentReps').textContent;
+  input.type = 'number';
+  input.step = type === 'weight' ? '0.5' : '1';
+  document.getElementById('inputModal').style.display = 'flex';
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeInputModal(e) { if (e.target.id === 'inputModal') document.getElementById('inputModal').style.display = 'none'; }
+function nudge(d) { const i = document.getElementById('modalInput'); i.value = Math.max(0, (parseFloat(i.value)||0)+d); }
+function saveInput() {
+  const val = document.getElementById('modalInput').value;
+  if (S.modalType === 'weight') document.getElementById('currentWeight').textContent = val || '—';
+  else document.getElementById('currentReps').textContent = val || '10';
+  document.getElementById('inputModal').style.display = 'none';
+}
+
+// ============================================================
+// MACHINE GUIDE
+// ============================================================
+async function showMachineGuide() {
+  const day = ROUTINE.days[S.workout];
+  const ex = day.exercises[S.exIdx];
+
+  document.getElementById('guideGif').innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Loading...</span></div>';
+  document.getElementById('guideMuscles').innerHTML = '';
+  document.getElementById('guideSteps').innerHTML = '';
+  document.getElementById('guideTip').textContent = ex.tip;
+
+  const words = ex.name.split(' ');
+  const last = words.pop();
+  document.getElementById('guideExName').innerHTML =
+    (words.length ? words.join(' ')+' ' : '') + `<span style="color:var(--teal);">${last}</span>`;
+
+  showScreen('maquinas');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-maquinas').classList.add('active');
+
+  const data = await fetchEx(ex.id);
+  if (data) {
+    document.getElementById('guideGif').innerHTML = `<img src="${data.gifUrl}" alt="${ex.name}">`;
+    const muscles = [...(data.target ? [data.target] : []), ...(data.secondaryMuscles||[])];
+    document.getElementById('guideMuscles').innerHTML = muscles.map((m,i) =>
+      `<span class="badge ${i===0?'teal':'muted'}">${m}</span>`
+    ).join('');
+    const steps = data.instructions || [];
+    document.getElementById('guideSteps').innerHTML = steps.slice(0,4).map((s,i) =>
+      `<div class="step-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`
+    ).join('');
+  } else {
+    document.getElementById('guideGif').innerHTML = `<div class="loading-state"><i class="ti ti-photo-off" style="font-size:28px; color:var(--muted);"></i><span>Image not available</span></div>`;
+    document.getElementById('guideSteps').innerHTML = `<div class="step-item"><div class="step-num">!</div><div class="step-text">Could not load guide. Check your connection.</div></div>`;
+  }
+}
+
+function closeMachineGuide() {
+  showScreen('ejercicio');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-ejercicio').classList.add('active');
+}
+
+// ============================================================
+// UPDATE ROUTINE MODAL
+// ============================================================
+let checkedItems = new Set();
+
+function openUpdateModal() {
+  checkedItems.clear();
+  ['check-1','check-2','check-3'].forEach(id => {
+    document.getElementById(id).classList.remove('is-checked');
+    document.getElementById('box-'+id.split('-')[1]).innerHTML = '';
+  });
+
+  const totalEx = ROUTINE.days.reduce((a,d)=>a+d.exercises.length, 0);
+  const savedW = Object.keys(S.weights).length;
+  const allLogged = savedW >= totalEx;
+
+  const autoItem = document.getElementById('check-auto');
+  const autoDesc = document.getElementById('autoCheckDesc');
+  if (allLogged) {
+    autoItem.classList.add('auto-item');
+    autoDesc.textContent = `Detected automatically · ${savedW} weights saved`;
+    checkedItems.add('auto');
+  } else {
+    autoItem.classList.remove('auto-item');
+    autoItem.style.opacity = '0.5';
+    autoDesc.textContent = `${savedW} of ${totalEx} exercises logged`;
+  }
+
+  updateScore();
+  document.getElementById('updateModal').style.display = 'flex';
+}
+
+function closeUpdateModal(e) { if (e.target.id === 'updateModal') document.getElementById('updateModal').style.display = 'none'; }
+
+function toggleCheck(id) {
+  const el = document.getElementById(id);
+  const num = id.split('-')[1];
+  const box = document.getElementById('box-'+num);
+  if (checkedItems.has(id)) {
+    checkedItems.delete(id);
+    el.classList.remove('is-checked');
+    box.innerHTML = '';
+  } else {
+    checkedItems.add(id);
+    el.classList.add('is-checked');
+    box.innerHTML = '<i class="ti ti-check"></i>';
+  }
+  updateScore();
+}
+
+function updateScore() {
+  const total = checkedItems.size;
+  const max = 4;
+  document.getElementById('scoreFill').style.width = (total/max*100)+'%';
+  document.getElementById('scoreLabel').textContent = `${total} of ${max}`;
+
+  const card = document.getElementById('resultCard');
+  const btn = document.getElementById('claudeBtn');
+
+  if (total >= 3) {
+    card.className = 'result-card ready';
+    document.getElementById('resultEmoji').textContent = '🔄';
+    document.getElementById('resultTitle').textContent = 'Time to level up';
+    document.getElementById('resultSub').textContent = 'Strong signals detected. Ask Claude to build your next routine.';
+    btn.style.display = 'block';
+  } else if (total >= 2) {
+    card.className = 'result-card not-yet';
+    document.getElementById('resultEmoji').textContent = '🤔';
+    document.getElementById('resultTitle').textContent = 'Almost there';
+    document.getElementById('resultSub').textContent = 'One more signal and you\'ll have a clear answer.';
+    btn.style.display = 'none';
+  } else {
+    card.className = 'result-card not-yet';
+    document.getElementById('resultEmoji').textContent = '💪';
+    document.getElementById('resultTitle').textContent = 'Keep going';
+    document.getElementById('resultSub').textContent = 'Mark the signals that apply to evaluate.';
+    btn.style.display = 'none';
+  }
+}
+
+function openClaude() {
+  const prompt = encodeURIComponent("I've been following a 4-day gym routine for 8+ weeks:\n- Day 1: Shoulders, chest & triceps\n- Day 2: Glutes & legs\n- Day 3: Back & biceps\n- Day 4: Full body functional\n\nI'm 31 years old, 62 kg, and my goal is muscle gain. I train 3-4x per week. I feel ready to update my routine. Can you create a new progressive 4-day program with the same structure but new exercises and higher intensity?");
+  window.open(`https://claude.ai/new?q=${prompt}`, '_blank');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, bg, color) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.background = bg;
+  t.style.color = color;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderRutina();
+</script>
+</body>
+</html>
